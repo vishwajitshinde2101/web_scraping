@@ -3,17 +3,10 @@ const fs = require('fs');
 const path = require('path');
 const Tesseract = require('tesseract.js');
 
-
-// Disable SSL verification temporarily
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
-// Captcha URL and Parameters
 const CAPTCHA_URL = 'https://freesearchigrservice.maharashtra.gov.in/Handler.ashx?txt=8c779b';
-
-// Image download path
 const CAPTCHA_IMAGE_PATH = path.join(__dirname, 'captcha.jpg');
 
-// Step 1: Setup headers and cookies (same as curl)
 const headers = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
     'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8,mr;q=0.7',

@@ -18,7 +18,6 @@ async function downloadAndReadCaptcha() {
         fs.writeFileSync('captcha.jpg', response.data);
         console.log('Captcha image saved.');
 
-        // Preprocess: Convert to grayscale to improve OCR
         await sharp('captcha.jpg')
             .grayscale()
             .threshold(150)

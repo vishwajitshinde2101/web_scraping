@@ -1,7 +1,6 @@
 const Tesseract = require('tesseract.js');
 const path = require('path');
 
-
 const CAPTCHA_IMAGE_PATH = path.join(__dirname, 'captcha.jpg');
 
 async function recognizeCaptchaText() {
@@ -14,8 +13,6 @@ async function recognizeCaptchaText() {
                 logger: (m) => console.log(m),
             }
         );
-        // console.log('recognizeCaptchaText');
-        // console.log('✅ Captcha text:', text);
         return text;
     } catch (err) {
         console.error('❌ Error extracting captcha text:', err.message);
