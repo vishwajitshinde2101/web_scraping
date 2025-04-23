@@ -14,7 +14,9 @@ async function recognizeCaptchaText() {
                 logger: (m) => console.log(m),
             }
         );
-        console.log('✅ Captcha text:', text);
+        // console.log('recognizeCaptchaText');
+        // console.log('✅ Captcha text:', text);
+        return text;
     } catch (err) {
         console.error('❌ Error extracting captcha text:', err.message);
     }
