@@ -91,16 +91,21 @@ async function downloadCaptcha() {
     const captchaCode = await recognizeCaptchaText(CAPTCHA_IMAGE_PATH);
     console.log('📌 Recognized Captcha:', captchaCode);
     await page.waitForTimeout(5000);
+
     await page.waitForSelector('#txtImg1', { visible: true });
     await page.type('#txtImg1', captchaCode); // captcha input box मध्ये टाकतो
     console.log('✅ Captcha entered');
     await page.waitForTimeout(5000);
 
-    // await page.waitForTimeout(5000);
-    // await page.waitForSelector('#btnSearch_RestMaha', { visible: true });
-    // await page.click('#btnSearch_RestMaha');
-    // console.log('✅ entered');
+    await page.waitForTimeout(5000);
+    await page.waitForSelector('#btnSearch_RestMaha', { visible: true });
+    await page.click('#btnSearch_RestMaha');
+    console.log('✅ entered');
 
+    await page.waitForTimeout(5000);
+    await page.waitForSelector('#btnCancel_RestMaha', { visible: true });
+    await page.click('#btnCancel_RestMaha');
+    console.log('✅ Cancel Button Clicked ');
 
     await page.waitForTimeout(10000);
 })();
