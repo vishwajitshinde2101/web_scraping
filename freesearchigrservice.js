@@ -7,7 +7,6 @@ const mysql = require('mysql2/promise');
 const captchaSelector = '#imgCaptcha_new';
 const CAPTCHA_IMAGE_PATH = path.join(__dirname, 'captcha_from_ui.jpg');
 
-// const CAPTCHA_IMAGE_PATH = path.join(__dirname, 'captcha.jpg');
 
 async function getPlots() {
     const connection = await mysql.createConnection({
@@ -37,7 +36,7 @@ async function handleCaptcha(page) {
     const trimmedCaptcha = captchaCode.trim();
     console.log('📌 Recognized Captcha:', trimmedCaptcha);
 
-    await page.click('#txtImg1', { clickCount: 3 }); // clear if already anything there
+    await page.click('#txtImg1', { clickCount: 3 });
     await page.type('#txtImg1', trimmedCaptcha);
 }
 
@@ -127,8 +126,7 @@ async function runAutomation() {
 
     await page.waitForTimeout(3000);
 
-// 🔁 Retry logic: second captcha try
-    await handleCaptcha(page); // 🔁 Second attempt
+    await handleCaptcha(page);
 
     await page.waitForTimeout(2000);
     await page.click('#btnSearch_RestMaha');
