@@ -1,11 +1,13 @@
+const Tesseract = require('tesseract.js');
 const puppeteer = require('puppeteer');
 const path = require('path');
 const axios = require('axios');
 const fs = require('fs');
 const mysql = require('mysql2/promise');
-const recognizeCaptchaText = require('./recognizeCaptcha');
+const captchaSelector = '#imgCaptcha_new';
+const CAPTCHA_IMAGE_PATH = path.join(__dirname, 'captcha_from_ui.jpg');
 
-const CAPTCHA_IMAGE_PATH = path.join(__dirname, 'captcha.jpg');
+// const CAPTCHA_IMAGE_PATH = path.join(__dirname, 'captcha.jpg');
 
 async function getPlots() {
     const connection = await mysql.createConnection({
@@ -49,6 +51,26 @@ async function downloadCaptcha() {
         console.error('❌ Failed to download captcha:', err.message);
     }
 }
+
+async function handleCaptcha(page) {
+    await page.waitForSelector(captchaSelector);
+    const captchaElement = await page.$(captchaSelector);
+    await captchaElement.screenshot({ path: CAPTCHA_IMAGE_PATH });
+    console.log('✅ Captcha screenshot taken from UI');
+
+    const { data: { text: captchaCode } } = await Tesseract.recognize(
+        CAPTCHA_IMAGE_PATH,
+        'eng',
+        { logger: m => console.log(m) }
+    );
+    const trimmedCaptcha = captchaCode.trim();
+    console.log('📌 Recognized Captcha:', trimmedCaptcha);
+
+    await page.click('#txtImg1', { clickCount: 3 }); // clear if already anything there
+    await page.type('#txtImg1', trimmedCaptcha);
+}
+
+
 
 async function runAutomation() {
     const browser = await puppeteer.launch({
@@ -103,8 +125,9 @@ async function runAutomation() {
     });
     console.log('✅ Tahsil selected');
 
-    // await page.waitForTimeout(5000);
+    await page.waitForTimeout(5000);
 
+    // await page.waitForTimeout(3000);
 
     await page.waitForSelector('#ddlvillage');
     await page.click('#ddlvillage');
@@ -117,32 +140,28 @@ async function runAutomation() {
     });
     console.log('✅ Village selected');
 
-    // await page.waitForTimeout(5000);
+    await page.waitForTimeout(3000);
 
 
     await page.waitForSelector('#txtAttributeValue1');
     await page.type('#txtAttributeValue1', '1');
     console.log('✅ Value entered');
+    await page.waitForTimeout(2000);
 
-    // await page.waitForTimeout(5000);
-    await downloadCaptcha();
-    const captchaCode = await recognizeCaptchaText(CAPTCHA_IMAGE_PATH);
-    console.log('📌 Recognized Captcha:', captchaCode);
-
-    await page.waitForSelector('#txtImg1');
-    await page.type('#txtImg1', captchaCode);
-    console.log('✅ Captcha entered');
-
-    await page.waitForSelector('#btnOtherdistrictSearch');
-    await page.evaluate(() => {
-        const btn = document.querySelector('#btnOtherdistrictSearch');
-        btn.click();
-    });
+    await handleCaptcha(page); // 🔁 First attempt
 
     await page.waitForTimeout(2000);
-    await page.waitForSelector('#btnSearch_RestMaha');
     await page.click('#btnSearch_RestMaha');
     console.log('✅ Search button clicked');
+
+    await page.waitForTimeout(3000);
+
+// 🔁 Retry logic: second captcha try
+    await handleCaptcha(page); // 🔁 Second attempt
+
+    await page.waitForTimeout(2000);
+    await page.click('#btnSearch_RestMaha');
+    console.log('✅ Retried Search button clicked');
     // await browser.close();
 }
 

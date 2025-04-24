@@ -33,3 +33,4 @@ async function downloadCaptcha() {
 }
 
 module.exports = downloadCaptcha;
+downloadCaptcha();

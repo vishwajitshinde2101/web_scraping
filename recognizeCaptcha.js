@@ -13,6 +13,7 @@ async function recognizeCaptchaText() {
                 logger: (m) => console.log(m),
             }
         );
+        console.log("Text ::" + text)
         return text;
     } catch (err) {
         console.error('❌ Error extracting captcha text:', err.message);
@@ -20,3 +21,4 @@ async function recognizeCaptchaText() {
 }
 
 module.exports = recognizeCaptchaText;
+recognizeCaptchaText();
