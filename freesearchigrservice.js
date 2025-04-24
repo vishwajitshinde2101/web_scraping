@@ -132,6 +132,47 @@ async function runAutomation() {
     await page.click('#btnSearch_RestMaha');
     console.log('✅ Retried Search button clicked');
     // await browser.close();
+
+
+// Monitor API response
+    let checkedApiResponse = false;
+
+    page.on('response', async (response) => {
+        if (checkedApiResponse) return;
+
+        const url = response.url();
+        const status = response.status();
+
+        if (url.includes('https://freesearchigrservice.maharashtra.gov.in/') && status === 200) {
+            console.log('✅ API call successful with status 200');
+
+            try {
+                const responseBody = await response.text();
+                // console.log("responseBody ::" + responseBody);
+                if (responseBody.includes('RegistrationGrid')) {
+                    console.log('✅ RegistrationGrid FOUND in API response');
+
+
+                } else {
+                    console.log('❌ RegistrationGrid NOT found in API response');
+                }
+            } catch (err) {
+                console.error('❌ Error reading response:', err.message);
+            }
+
+            checkedApiResponse = true; // flag set - check ekdach honar
+        }
+    });
+
+    await page.waitForTimeout(3000);
+
+    if (!checkedApiResponse) {
+        console.log('⚠️ API response not OK, retrying captcha and search...');
+        await handleCaptcha(page); // Retry
+        await page.waitForTimeout(2000);
+        await page.click('#btnSearch_RestMaha');
+        console.log('✅ Retried Search button clicked');
+    }
 }
 
 runAutomation();
