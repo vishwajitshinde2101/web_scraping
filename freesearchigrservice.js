@@ -49,7 +49,18 @@ async function runAutomation() {
         args: ['--start-maximized']
     });
 
+
+
     const page = await browser.newPage();
+
+    if (page.length > 0) {
+        try {
+            await pages[0].close(); // now close the original about:blank tab
+            console.log('✅ Default about:blank tab closed');
+        } catch (err) {
+            console.log('⚠️ Could not close initial tab:', err.message);
+        }
+    }
 
     await page.goto('https://freesearchigrservice.maharashtra.gov.in/', {waitUntil: 'domcontentloaded'});
 
@@ -64,7 +75,7 @@ async function runAutomation() {
     // for (const plot of plotNumbers) {
     //     console.log(`Processing Plot: ${plot} in ${plot}, ${plot}, ${plot}`);
 
-    await page.waitForTimeout(2000);
+    // await page.waitForTimeout(1000);
     await page.waitForSelector('#btnOtherdistrictSearch');
     await page.evaluate(() => {
         const btn = document.querySelector('#btnOtherdistrictSearch');
@@ -72,7 +83,7 @@ async function runAutomation() {
     });
     console.log('✅ Clicked "Rest of Maharashtra"');
 
-    await page.waitForTimeout(2000);
+    // await page.waitForTimeout(1000);
     await page.waitForSelector('#ddlFromYear1');
     await page.select('#ddlFromYear1', '2024');
     console.log('✅ Year selected');
@@ -82,7 +93,7 @@ async function runAutomation() {
     await page.select('#ddlDistrict1', '1');
     console.log('✅ District selected');
 
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(3000);
 
     await page.waitForSelector('#ddltahsil');
     await page.click('#ddltahsil');
@@ -95,7 +106,7 @@ async function runAutomation() {
     });
     console.log('✅ Tahsil selected');
 
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(2000);
 
     // await page.waitForTimeout(3000);
 
@@ -110,7 +121,7 @@ async function runAutomation() {
     });
     console.log('✅ Village selected');
 
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(2000);
 
 
     await page.waitForSelector('#txtAttributeValue1');
@@ -120,15 +131,15 @@ async function runAutomation() {
 
     await handleCaptcha(page); // 🔁 First attempt
 
-    await page.waitForTimeout(2000);
+    // await page.waitForTimeout(2000);
     await page.click('#btnSearch_RestMaha');
     console.log('✅ Search button clicked');
 
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(2000);
 
     await handleCaptcha(page);
 
-    await page.waitForTimeout(2000);
+    // await page.waitForTimeout(2000);
     await page.click('#btnSearch_RestMaha');
     console.log('✅ Retried Search button clicked');
     // await browser.close();
@@ -137,8 +148,21 @@ async function runAutomation() {
 // Monitor API response
     let checkedApiResponse = false;
 
+    // 🔁 Close the "about:blank" tab before checking the API response
+    const allPages = await browser.pages();
+    for (const pg of allPages) {
+        const url = pg.url();
+        if (url === 'about:blank') {
+            await pg.close();
+            console.log('❌ Closed about:blank tab');
+        }
+    }
+
+
+
     page.on('response', async (response) => {
         if (checkedApiResponse) return;
+
 
         const url = response.url();
         const status = response.status();
@@ -155,8 +179,18 @@ async function runAutomation() {
                     await page.waitForSelector('#RegistrationGrid input[value="IndexII"]');
 
                     const buttons = await page.$$('#RegistrationGrid input[value="IndexII"]');
+                    console.log("buttons ::  "+ buttons)
 
-                    for (const btn of buttons) {
+                    const buttonCount = await page.$$eval('#RegistrationGrid input[value="IndexII"]', buttons => buttons.length);
+                    console.log("Total buttons: ", buttonCount);
+
+                    for (let i = 0; i < buttonCount; i++) {
+                        const [originalPage] = await browser.pages();
+
+                        // refetch fresh button
+                        const buttons = await page.$$('#RegistrationGrid input[value="IndexII"]');
+                        const btn = buttons[i];
+
                         const parentTd = await btn.evaluateHandle(node => node.closest('td'));
                         const parentTr = await parentTd.evaluateHandle(td => td.closest('tr'));
 
@@ -167,8 +201,41 @@ async function runAutomation() {
                         const finalBtn = await lastTdBtn[lastTdIndex].$('input');
 
                         if (finalBtn) {
+                            const newPagePromise = new Promise(resolve =>
+                                browser.once('targetcreated', async target => {
+                                    const newPage = await target.page();
+                                    await newPage.bringToFront();
+                                    resolve(newPage);
+                                })
+                            );
+
                             await finalBtn.click();
-                            console.log('✅ "IndexII" button clicked inside last <td>');
+                            console.log(`✅ "IndexII" button clicked (${i + 1}/${buttonCount})`);
+
+                            const newPage = await newPagePromise;
+                            await newPage.waitForTimeout(3000); // adjust as needed
+                            console.log('🆕 New tab opened');
+
+                            // SAVE AS PDF
+                            const fileName = `IndexII_${i + 1}.pdf`; // you can customize the name
+                            const filePath = path.join(__dirname, 'pdfs', fileName);
+
+                             // create pdf folder if not exist
+                            if (!fs.existsSync(path.join(__dirname, 'pdfs'))) {
+                                fs.mkdirSync(path.join(__dirname, 'pdfs'));
+                            }
+
+                            await newPage.pdf({
+                                path: filePath,
+                                format: 'A4',
+                                printBackground: true
+                            });
+                            console.log(`📄 Saved PDF: ${filePath}`);
+
+                            await newPage.close();
+                            console.log('❌ New tab closed');
+
+                            await originalPage.bringToFront();
                         } else {
                             console.log('❌ Last <td> does not have a button');
                         }
