@@ -152,7 +152,27 @@ async function runAutomation() {
                 if (responseBody.includes('RegistrationGrid')) {
                     console.log('✅ RegistrationGrid FOUND in API response');
 
+                    await page.waitForSelector('#RegistrationGrid input[value="IndexII"]');
 
+                    const buttons = await page.$$('#RegistrationGrid input[value="IndexII"]');
+
+                    for (const btn of buttons) {
+                        const parentTd = await btn.evaluateHandle(node => node.closest('td'));
+                        const parentTr = await parentTd.evaluateHandle(td => td.closest('tr'));
+
+                        const allTds = await parentTr.$$eval('td', tds => tds.map(td => td.innerHTML));
+                        const lastTdIndex = allTds.length - 1;
+
+                        const lastTdBtn = await parentTr.$$('td');
+                        const finalBtn = await lastTdBtn[lastTdIndex].$('input');
+
+                        if (finalBtn) {
+                            await finalBtn.click();
+                            console.log('✅ "IndexII" button clicked inside last <td>');
+                        } else {
+                            console.log('❌ Last <td> does not have a button');
+                        }
+                    }
                 } else {
                     console.log('❌ RegistrationGrid NOT found in API response');
                 }
@@ -160,7 +180,7 @@ async function runAutomation() {
                 console.error('❌ Error reading response:', err.message);
             }
 
-            checkedApiResponse = true; // flag set - check ekdach honar
+            checkedApiResponse = true;
         }
     });
 
