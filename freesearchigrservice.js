@@ -129,7 +129,7 @@ async function runAutomation() {
     console.log('✅ Value entered');
     await page.waitForTimeout(2000);
 
-    await handleCaptcha(page); // 🔁 First attempt
+    await handleCaptcha(page);
 
     // await page.waitForTimeout(2000);
     await page.click('#btnSearch_RestMaha');
